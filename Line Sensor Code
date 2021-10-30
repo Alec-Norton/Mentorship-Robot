@@ -1,0 +1,412 @@
+/*
+Basic libraries for using a homemade IR sensor grid.
+The sensor functions by charging a capacitor and measuring the discharge time.  Darker areas will result
+in a longer discharge time for the capacitor.
+
+This code will make use of TIMER0!!  Any changes to TIMER0 in the main code should be made with caution.
+
+This code makes use of the timer overflow interrupt 
+*/
+//REQUIRED HEADERS-------------------------------------------------------
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "lineSensor.h"
+
+//VARIABLES--------------------------------------------------------------
+volatile uint8_t ovfCounter=0; //tracks the number of counter overflows
+uint8_t cpuSpeed = F_CPU/1e6;
+
+//INTERRUPTS-------------------------------------------------------------
+ISR(TIMER1_OVF_vect)		//vector name matters! look at http://www.nongnu.org/avr-libc/user-manual/group__avr__interrupts.html for names
+{
+	ovfCounter++;
+}
+
+//FUNCTIONS--------------------------------------------------------------
+/*************************************************************************
+Initialize TIMER1 for use with IR line sensor 
+Input:    none
+Returns:  none
+*************************************************************************/
+void irSensorInit(void){
+	//clear TCCR1A bits & TCCR1B bits - ensure normal ops of TIMER1
+	TCCR1A &= ~((COM1A0<<1)|(COM1A1<<1)|(COM1B0<<1)|(COM1B1<<1)|(WGM11<<1)|(WGM10<<1));
+	TCCR1B &= ~((WGM12<<1)|(CS10<<1)|(CS11<<1)|(CS12<<1));
+	//enable timer1 overflow interrupt
+	TIMSK1 |= (1<<TOIE1);	
+}
+
+/*************************************************************************
+Read IR Sensor Array
+Input:    Channel (1-20)
+Returns:  uint16_t channel response time _us
+*************************************************************************/
+uint16_t irSensorRead(uint8_t channel){
+	uint16_t counts=0;								//function variable to store response time
+	switch (channel){
+		case 1:
+			DDRB |= (1<<DDRB5);							//configure channel as output
+			PORTB |= (1<<PORTB5);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRB &= ~(1<<DDRB5);						//configure channel as an input
+			PORTB &= ~(1<<PORTB5);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINB, PINB5)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 2:
+			DDRB |= (1<<DDRB6);							//configure channel as output
+			PORTB |= (1<<PORTB6);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRB &= ~(1<<DDRB6);						//configure channel as an input
+			PORTB &= ~(1<<PORTB6);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINB, PINB6)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 3:
+			DDRB |= (1<<DDRB7);							//configure channel as output
+			PORTB |= (1<<PORTB7);						//turn charge bit on
+			_delay_us(50);								//wait required 20us for cap to charge
+			DDRB &= ~(1<<DDRB7);						//configure channel as an input
+			PORTB &= ~(1<<PORTB7);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINB, PINB7)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 4:
+			DDRD |= (1<<DDRD0);							//configure channel as output
+			PORTD |= (1<<PORTD0);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRD &= ~(1<<DDRD0);						//configure channel as an input
+			PORTD &= ~(1<<PORTD0);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PIND, PIND0)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 5:
+			DDRD |= (1<<DDRD1);							//configure channel as output
+			PORTD |= (1<<PORTD1);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRD &= ~(1<<DDRD1);						//configure channel as an input
+			PORTD &= ~(1<<PORTD1);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PIND, PIND1)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 6:
+			DDRD |= (1<<DDRD4);							//configure channel as output
+			PORTD |= (1<<PORTD4);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRD &= ~(1<<DDRD4);						//configure channel as an input
+			PORTD &= ~(1<<PORTD4);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PIND, PIND4)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 7:
+			DDRD |= (1<<DDRD6);							//configure channel as output
+			PORTD |= (1<<PORTD6);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRD &= ~(1<<DDRD6);						//configure channel as an input
+			PORTD &= ~(1<<PORTD6);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PIND, PIND6)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 8:
+			DDRA |= (1<<DDRA3);							//configure channel as output
+			PORTA |= (1<<PORTA3);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRA &= ~(1<<DDRA3);						//configure channel as an input
+			PORTA &= ~(1<<PORTA3);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINA, PINA3)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 9:
+			DDRA |= (1<<DDRA4);							//configure channel as output
+			PORTA |= (1<<PORTA4);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRA &= ~(1<<DDRA4);						//configure channel as an input
+			PORTA &= ~(1<<PORTA4);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINA, PINA4)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 10:
+			DDRA |= (1<<DDRA5);							//configure channel as output
+			PORTA |= (1<<PORTA5);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRA &= ~(1<<DDRA5);						//configure channel as an input
+			PORTA &= ~(1<<PORTA5);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINA, PINA5)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 11:
+			DDRA |= (1<<DDRA6);							//configure channel as output
+			PORTA |= (1<<PORTA6);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRA &= ~(1<<DDRA6);						//configure channel as an input
+			PORTA &= ~(1<<PORTA6);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINA, PINA6)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 12:
+			DDRA |= (1<<DDRA7);							//configure channel as output
+			PORTA |= (1<<PORTA7);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRA &= ~(1<<DDRA7);						//configure channel as an input
+			PORTA &= ~(1<<PORTA7);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINA, PINA7)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 13:
+			DDRC |= (1<<DDRC7);							//configure channel as output
+			PORTC |= (1<<PORTC7);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC7);						//configure channel as an input
+			PORTC &= ~(1<<PORTC7);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC7)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 14:
+			DDRC |= (1<<DDRC6);							//configure channel as output
+			PORTC |= (1<<PORTC6);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC6);						//configure channel as an input
+			PORTC &= ~(1<<PORTC6);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC6)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 15:
+			DDRC |= (1<<DDRC5);							//configure channel as output
+			PORTC |= (1<<PORTC5);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC5);						//configure channel as an input
+			PORTC &= ~(1<<PORTC5);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC5)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 16:
+			DDRC |= (1<<DDRC4);							//configure channel as output
+			PORTC |= (1<<PORTC4);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC4);						//configure channel as an input
+			PORTC &= ~(1<<PORTC4);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC4)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 17:
+			DDRC |= (1<<DDRC3);							//configure channel as output
+			PORTC |= (1<<PORTC3);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC3);						//configure channel as an input
+			PORTC &= ~(1<<PORTC3);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC3)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 18:
+			DDRC |= (1<<DDRC2);							//configure channel as output
+			PORTC |= (1<<PORTC2);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRC &= ~(1<<DDRC2);						//configure channel as an input
+			PORTC &= ~(1<<PORTC2);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINC, PINC2)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption 
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 19:
+			DDRD |= (1<<DDRD7);							//configure channel as output
+			PORTD |= (1<<PORTD7);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRD &= ~(1<<DDRD7);						//configure channel as an input
+			PORTD &= ~(1<<PORTD7);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PIND, PIND7)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+		case 20:
+			DDRB |= (1<<DDRB0);							//configure channel as output
+			PORTB |= (1<<PORTB0);						//turn charge bit on
+			_delay_us(20);								//wait required 20us for cap to charge
+			DDRB &= ~(1<<DDRB0);						//configure channel as an input
+			PORTB &= ~(1<<PORTB0);						//disable channel PORT so internal pull up is not on
+			TCCR1B |= (1<<CS10);						//timer prescaler set to 1 & STARTS TIMER1
+			while( bit_is_set(PINB, PINB0)){			//wait for decay, cap decay time to 16bit resolution
+				if (ovfCounter>=50){
+					cli();								//disable interrupts
+					break;								//break required b/c transistor may not drain pin w/ low absorption
+				}	//end if
+			}	//end while
+			TCCR1B=0x00;								//initialize timer1 to default prescaler to stop timer1
+			counts = ovfCounter;
+			ovfCounter=0;								//reset overflow counter
+			TCNT1=0;									//reset the timer1 counter number
+			break;
+	}
+	return counts * 10;
+};
